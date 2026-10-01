@@ -1,0 +1,27 @@
+name: Atualizar Índices de Mídia
+
+on:
+  schedule:
+    - cron: '0 4 * * 0' # Executa todo domingo às 04:00 UTC
+  workflow_dispatch:      # Permite disparar manualmente pelo painel do GitHub
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python e XZ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Dependências
+        run: |
+          sudo apt-get update && sudo apt-get install -y xz-utils curl
+
+      - name: Log de Verificação
+        run: |
+          echo "Verificando integridade dos índices locais..."
+          ls -lh data/
