@@ -1,27 +1,43 @@
-name: Atualizar Índices de Mídia
+name: Atualização Diária de Índices de Mídia
 
 on:
   schedule:
-    - cron: '0 4 * * 0' # Executa todo domingo às 04:00 UTC
-  workflow_dispatch:      # Permite disparar manualmente pelo painel do GitHub
+    - cron: '0 5 * * *' # Executa todo dia às 05:00 UTC (após liberação dos exports diários)
+  workflow_dispatch:      # Permite disparar manualmente pelo painel Web do GitHub
+
+permissions:
+  contents: write
 
 jobs:
-  update-data:
+  update-indices:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout do Repositório
         uses: actions/checkout@v4
 
-      - name: Configurar Python e XZ
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Instalar Dependências
+      - name: Instalar Dependências do Sistema
         run: |
-          sudo apt-get update && sudo apt-get install -y xz-utils curl
+          sudo apt-get update
+          sudo apt-get install -y xz-utils
 
-      - name: Log de Verificação
+      - name: Executar Atualizador de Índices
         run: |
-          echo "Verificando integridade dos índices locais..."
-          ls -lh data/
+          python3 scripts/update_indices.py
+
+      - name: Realizar Commit e Push das Atualizações
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/*.xz
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração nos índices de dados hoje."
+          else
+            git commit -m "chore(data): atualização diária de índices de mídia [skip ci]"
+            git push
+          fi
